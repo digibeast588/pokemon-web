@@ -1,0 +1,91 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    padding: 0;
+    background-color: #f9f9f9;
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+}
+
+#searchBox {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+#filters {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#filters div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+#filters input[type="text"],
+#filters input[type="number"],
+#filters select {
+    flex: 1 1 150px;
+    padding: 5px;
+}
+
+#searchBtn, #resetBtn {
+    padding: 10px;
+    margin: 5px 0;
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 4px;
+}
+
+#resetBtn {
+    background-color: #f44336;
+}
+
+#searchBtn:hover {
+    background-color: #45a049;
+}
+
+#resetBtn:hover {
+    background-color: #d32f2f;
+}
+
+#results {
+    margin-top: 20px;
+}
+
+#resultList {
+    list-style-type: none;
+    padding: 0;
+}
+
+#resultList li {
+    padding: 5px;
+    cursor: pointer;
+    border-bottom: 1px solid #ddd;
+}
+
+#resultList li:hover {
+    background-color: #eee;
+}
+
+#imageBox {
+    margin-top: 20px;
+    text-align: center;
+}
+
+#imageBox img {
+    max-width: 300px;
+    height: auto;
+}
