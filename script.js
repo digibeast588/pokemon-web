@@ -3,13 +3,15 @@ let resultList = document.getElementById('resultList');
 let pokemonImage = document.getElementById('pokemonImage');
 
 // 加载数据
-fetch('https://github.com/digibeast588/pokemon-web/releases/download/pokemonster/pokemon_data.json
-')
-    .then(response => response.json())
-    .then(data => {
-        pokemonData = data;
-        populateSelects();
-    });
+fetch('https://raw.githubusercontent.com/digibeast588/pokemon-web/main/pokemon_data.json')
+  .then(response => response.json())
+  .then(data => {
+    pokemonData = data;
+    populateSelects();
+  })
+  .catch(err => console.error('加载出错', err));
+
+
 
 function populateSelects() {
     let allTypes = ['一般', '火', '水', '电', '草', '冰', '格斗', '毒', '地面',
