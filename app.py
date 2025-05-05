@@ -5,101 +5,70 @@ import json
 with open('pokemon_data.json', 'r', encoding='utf-8') as f:
     pokemon_list = json.load(f)
 
-# 初始化 session_state
-if "current_list" not in st.session_state:
-    st.session_state.current_list = pokemon_list.copy()
+# 世代映射
+gen_map = {
+    "第一世代": 1, "第二世代": 2, "第三世代": 3, "第四世代": 4,
+    "第五世代": 5, "第六世代": 6, "第七世代": 7, "第八世代": 8, "第九世代": 9
+}
 
-# 定义对比函数
-def compare(val, cmp_symbol, poke_val):
-    if poke_val is None:
-        return True
-    if val is None:
-        return True
-    if cmp_symbol == "🔼":
-        return poke_val > val
-    elif cmp_symbol == "=":
-        return poke_val == val
-    elif cmp_symbol == "🔽":
-        return poke_val < val
-    return True
+# 初始化 session 状态
+if 'result' not in st.session_state:
+    st.session_state.result = pokemon_list
 
-# 左侧 sidebar
-st.sidebar.title("宝可梦筛选器")
+st.title("宝可梦筛选器（干净版）")
 
-# 关键词
-keyword = st.sidebar.text_input("名字关键字")
+# 筛选条件区
+attrs = st.multiselect("属性（多选）", ['草', '火', '水', '电', '冰', '格斗', '毒', '地面', '飞行', '超能力', '虫', '岩石', '幽灵', '龙', '恶', '钢', '妖精'])
+exclude_attrs = st.multiselect("排除属性", ['草', '火', '水', '电', '冰', '格斗', '毒', '地面', '飞行', '超能力', '虫', '岩石', '幽灵', '龙', '恶', '钢', '妖精'])
 
-# 属性、蛋组多选
-attrs = ["一般", "火", "水", "草", "电", "冰", "格斗", "毒", "地面",
-         "飞行", "超能力", "虫", "岩石", "幽灵", "龙", "恶", "钢", "妖精"]
-attr_include = st.sidebar.multiselect("包含属性", options=attrs)
-attr_exclude = st.sidebar.multiselect("排除属性", options=attrs)
+eggs = st.multiselect("蛋组（多选）", ['怪兽', '水中1', '水中2', '水中3', '虫', '飞行', '地面', '妖精', '植物', '人形', '矿物', '不定形', '龙', '未发现组'])
+exclude_eggs = st.multiselect("排除蛋组", ['怪兽', '水中1', '水中2', '水中3', '虫', '飞行', '地面', '妖精', '植物', '人形', '矿物', '不定形', '龙', '未发现组'])
+specify_undiscovered = st.checkbox("指定未发现蛋组")
 
-egg_groups = ["陆上", "水中1", "水中2", "水中3", "飞行", "虫", "矿物", 
-              "妖精", "植物", "怪兽", "人型", "龙", "不定形", "未发现"]
-egg_include = st.sidebar.multiselect("包含蛋组", options=egg_groups)
-egg_exclude = st.sidebar.multiselect("排除蛋组", options=egg_groups)
-specify_undiscovered = st.sidebar.checkbox("指定未发现蛋组")
+ability = st.text_input("特性包含")
+effort = st.text_input("努力值包含")
+exclude_effort = st.text_input("排除努力值")
 
-# 特性、努力值
-ability = st.sidebar.text_input("特性")
-effort = st.sidebar.text_input("努力值")
-effort_exclude = st.sidebar.text_input("排除努力值")  # ⭐ 新增排除努力值
+gender = st.selectbox("性别比例", ["", "7♂:1♀", "1♂:1♀", "1♂:3♀", "1♂:0♀", "0♂:1♀", "无性别"])
+mega = st.selectbox("超级进化", ["", "有超级进化", "无超级进化"])
+gmax = st.selectbox("超极巨化", ["", "有超极巨化", "无超极巨化"])
+evolution = st.selectbox("进化阶段", ["", "无进化树", "一段", "二段", "最终"])
 
-# 性别、超级进化、超极巨化、进化阶段
-gender = st.sidebar.selectbox("性别比例", ["", "7♂:1♀", "1♂:1♀", "1♂:3♀", "1♂:0♀", "0♂:1♀", "无性别"])
-mega = st.sidebar.selectbox("超级进化", ["", "有超级进化", "无超级进化"])
-gmax = st.sidebar.selectbox("超极巨化", ["", "有超极巨化", "无超极巨化"])
-evolution = st.sidebar.selectbox("进化阶段", ["", "无进化树", "一段", "二段", "最终"])
+def num_filter(label):
+    cmp = st.selectbox(f"{label} 比较符", [">", "=", "<"], key=label)
+    val = st.number_input(f"{label} 数值", value=0)
+    return cmp, val
 
-# 数值 + 对比符
-total_cmp = st.sidebar.selectbox("种族值总和条件", ["🔼", "=", "🔽"])
-total_val = st.sidebar.number_input("种族值总和", min_value=0, max_value=1000, value=0)
+cmp_total, val_total = num_filter("种族值总和")
+cmp_speed, val_speed = num_filter("速度")
+cmp_height, val_height = num_filter("身高(m)")
+cmp_weight, val_weight = num_filter("体重(kg)")
+cmp_hatch, val_hatch = num_filter("孵化周期")
+cmp_gen, val_gen = num_filter("世代")
 
-speed_cmp = st.sidebar.selectbox("速度条件", ["🔼", "=", "🔽"])
-speed_val = st.sidebar.number_input("速度值", min_value=0, max_value=200, value=0)
-
-height_cmp = st.sidebar.selectbox("身高条件(m)", ["🔼", "=", "🔽"])
-height_val = st.sidebar.number_input("身高(m)", min_value=0.0, max_value=20.0, value=0.0)
-
-weight_cmp = st.sidebar.selectbox("体重条件(kg)", ["🔼", "=", "🔽"])
-weight_val = st.sidebar.number_input("体重(kg)", min_value=0.0, max_value=1000.0, value=0.0)
-
-hatch_cmp = st.sidebar.selectbox("孵化周期条件", ["🔼", "=", "🔽"])
-hatch_val = st.sidebar.number_input("孵化周期", min_value=1, max_value=40, value=1)
-
-gen_cmp = st.sidebar.selectbox("初登场世代条件", ["🔼", "=", "🔽"])
-gen_val = st.sidebar.number_input("初登场世代", min_value=1, max_value=9, value=1)
-
-# 搜索、重置按钮
-if st.sidebar.button("🔍 搜索"):
+# 搜索与重置按钮
+col1, col2 = st.columns(2)
+if col1.button("🔍 搜索"):
     result = []
-    for p in st.session_state.current_list:
-        if keyword and keyword not in p['中文名'] and keyword.lower() not in p['英文名'].lower():
+    for p in pokemon_list:
+        p_attrs = p['属性'].split("/") if isinstance(p['属性'], str) else p['属性']
+        p_eggs = p['蛋组'].split("/") if isinstance(p['蛋组'], str) else p['蛋组']
+
+        if attrs and not any(a in p_attrs for a in attrs):
             continue
-
-        attrs_p = p['属性'].split("/") if isinstance(p['属性'], str) else p['属性']
-        eggs_p = p['蛋组'].split("/") if isinstance(p['蛋组'], str) else p['蛋组']
-
-        if attr_include and not any(a in attrs_p for a in attr_include):
+        if exclude_attrs and any(a in p_attrs for a in exclude_attrs):
             continue
-        if attr_exclude and any(a in attrs_p for a in attr_exclude):
+        if specify_undiscovered and '未发现组' not in p_eggs:
             continue
-
-        if specify_undiscovered:
-            if "未发现组" not in eggs_p:
-                continue
-        else:
-            if egg_include and not any(e in eggs_p for e in egg_include):
-                continue
-            if egg_exclude and any(e in eggs_p for e in egg_exclude):
-                continue
-
+        if eggs and not any(e in p_eggs for e in eggs):
+            continue
+        if exclude_eggs and any(e in p_eggs for e in exclude_eggs):
+            continue
         if ability and ability not in p['特性']:
             continue
         if effort and effort not in p['努力值奖励']:
             continue
-        if effort_exclude and effort_exclude in p['努力值奖励']:
+        if exclude_effort and exclude_effort in p['努力值奖励']:
             continue
         if gender and p['性别比例'] != gender:
             continue
@@ -110,50 +79,42 @@ if st.sidebar.button("🔍 搜索"):
         if evolution and p['进化'] != evolution:
             continue
 
-        if not compare(total_val, total_cmp, p['种族值总和']):
-            continue
-        if not compare(speed_val, speed_cmp, p['速度种族值']):
-            continue
-        if not compare(height_val, height_cmp, p['身高(m)']):
-            continue
-        if not compare(weight_val, weight_cmp, p['体重(kg)']):
-            continue
+        def compare(cmp, val, poke_val):
+            try:
+                poke_val = float(poke_val)
+            except:
+                return True
+            if cmp == ">":
+                return poke_val > val
+            elif cmp == "=":
+                return poke_val == val
+            else:
+                return poke_val < val
 
-        gen_map = {"第一世代": 1, "第二世代": 2, "第三世代": 3, "第四世代": 4,
-                   "第五世代": 5, "第六世代": 6, "第七世代": 7, "第八世代": 8, "第九世代": 9}
-        gen_txt = p.get('初登场世代', "")
-        poke_gen_num = gen_map.get(gen_txt, 0)
-        if not compare(gen_val, gen_cmp, poke_gen_num):
+        if not compare(cmp_total, val_total, p['种族值总和']):
+            continue
+        if not compare(cmp_speed, val_speed, p['速度种族值']):
+            continue
+        if not compare(cmp_height, val_height, p['身高(m)']):
+            continue
+        if not compare(cmp_weight, val_weight, p['体重(kg)']):
+            continue
+        if not compare(cmp_hatch, val_hatch, p['孵化周期']):
+            continue
+        poke_gen = gen_map.get(p.get('初登场世代', ""), 0)
+        if not compare(cmp_gen, val_gen, poke_gen):
             continue
 
         result.append(p)
+    st.session_state.result = result
 
-    st.session_state.current_list = result.copy()
-    st.experimental_rerun()
+if col2.button("🔄 重置"):
+    st.session_state.result = pokemon_list
 
-if st.sidebar.button("🔄 重置"):
-    st.session_state.current_list = pokemon_list.copy()
-    st.experimental_rerun()
-
-# 主界面显示结果
-st.title("宝可梦搜索结果")
-st.write(f"共找到 {len(st.session_state.current_list)} 条结果")
-
-for p in st.session_state.current_list:
-    with st.expander(f"{p['编号']} {p['中文名']} / {p['英文名']}"):
-        st.write(f"属性：{p['属性']}")
-        st.write(f"蛋组：{p['蛋组']}")
-        st.write(f"特性：{p['特性']}")
-        st.write(f"努力值奖励：{p['努力值奖励']}")
-        st.write(f"性别比例：{p['性别比例']}")
-        st.write(f"超级进化：{p['超级进化']}")
-        st.write(f"超极巨化：{p['超极巨化']}")
-        st.write(f"进化：{p['进化']}")
-        st.write(f"种族值总和：{p['种族值总和']}")
-        st.write(f"速度：{p['速度种族值']}")
-        st.write(f"身高：{p['身高(m)']} m")
-        st.write(f"体重：{p['体重(kg)']} kg")
-        st.write(f"孵化周期：{p['孵化周期']}")
-        st.write(f"初登场世代：{p['初登场世代']}")
-        if '图片路径' in p:
-            st.image(p['图片路径'], width=200)
+# 输出结果
+if st.session_state.result:
+    st.write(f"### 共找到 {len(st.session_state.result)} 个宝可梦")
+    for p in st.session_state.result:
+        st.markdown(f"- **{p['编号']} {p['中文名']}**")
+else:
+    st.warning("❌ 没有找到符合条件的宝可梦。")
