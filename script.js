@@ -3,7 +3,7 @@ let resultList = document.getElementById('resultList');
 let pokemonImage = document.getElementById('pokemonImage');
 
 // 加载数据
-fetch('pokemon_data.json')
+fetch('./pokemon_data.json')
     .then(response => response.json())
     .then(data => {
         pokemonData = data;
